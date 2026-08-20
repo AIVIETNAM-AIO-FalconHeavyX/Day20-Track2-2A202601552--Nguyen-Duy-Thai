@@ -90,7 +90,12 @@ phụ, còn quantization và queue mới ảnh hưởng rõ hơn đến trải n
 
 ## 6. Bonus
 
-Chưa thực hiện bonus. Tôi ưu tiên hoàn tất đầy đủ base track với số liệu có thể kiểm chứng.
+Tôi chạy semantic cache offline với embedding túi từ mô phỏng. Ở threshold 0.80,
+cache hit 3/8 query (38%), giúp bỏ qua 3 lần gọi LLM và tiết kiệm khoảng 750 ms
+decode trong mô phỏng. Sweep từ 0.70 đến 0.95 đều cho 3/8 vì embedder offline chỉ
+cho similarity gần 0 hoặc 1; đây là giới hạn của stub, không phải bằng chứng rằng
+mọi threshold đều tương đương. Khi triển khai thật, cần embedding model chuyên dụng,
+đánh giá false hit/miss và tách cache theo tenant để tránh rò rỉ dữ liệu.
 
 ## 7. Điều làm tôi ngạc nhiên
 
