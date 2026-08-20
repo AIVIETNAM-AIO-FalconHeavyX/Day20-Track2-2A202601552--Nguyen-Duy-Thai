@@ -76,7 +76,9 @@ def is_committed(path: pathlib.Path) -> bool | None:
     if TRACKED is None:
         return None
     try:
-        rel = str(path.resolve().relative_to(labkit.repo_root()))
+        # Git reports POSIX separators even on Windows; normalize the local path
+        # before comparing so committed artifacts are recognized correctly.
+        rel = path.resolve().relative_to(labkit.repo_root()).as_posix()
     except ValueError:
         return None
     return rel in TRACKED
