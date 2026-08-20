@@ -1,4 +1,4 @@
-<#
+﻿<#
   Windows runner — the equivalent of `make <target>` for students without make.
 
   Works in Windows PowerShell 5.1 (powershell.exe) and PowerShell 7+ (pwsh).
@@ -157,7 +157,7 @@ switch ($Target) {
 
     default {
         Write-Host "Unknown target: $Target" -ForegroundColor Red
-        Write-Host "Run  .\lab.ps1  with no arguments to list targets."
+        Write-Host "Run lab.ps1 with no arguments to list targets"
         exit 1
     }
 }
