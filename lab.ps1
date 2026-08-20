@@ -46,7 +46,7 @@ switch ($Target) {
     'help' {
         Write-Host ""
         Write-Host "Day 20 lab — Windows runner" -ForegroundColor Cyan
-        Write-Host "Usage:  .\lab.ps1 <target>"
+        Write-Host "Usage:  .\lab.ps1 target"
         Write-Host ""
         Write-Host "Setup (00)"
         Write-Host "  probe          Probe hardware -> hardware.json"
