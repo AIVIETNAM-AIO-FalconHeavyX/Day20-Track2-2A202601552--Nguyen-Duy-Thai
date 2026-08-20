@@ -1,0 +1,104 @@
+{
+  "backend": "keyword overlap",
+  "mean_ms": {
+    "embed": 0.0,
+    "retrieve": 0.0,
+    "llm": 3396.8,
+    "total": 3396.9
+  },
+  "results": [
+    {
+      "query": "Why is goodput more useful than raw throughput?",
+      "answer": "Based on the provided context, **Goodput** is more useful than raw throughput because it specifically accounts for the **SLOs (Service Level Objectives)** and **TPOT (Throughput at Saturation)**.\n\nHere is the breakdown of why this makes it superior:\n\n1.  **Accurate Measurement of Efficiency**: Raw throughput measures the total requests per second (in the context of the provided text, likely referring to the specific metric being measured, though the text implies it ignores SLOs). Goodput counts only requests that met the **TTFT** (Time-to-Failure) and **TPOT** targets. This ensures that the system is not only fast but also meets the specific performance requirements defined by the SLOs.\n2.  **Avoiding False Optimism**: The text states that \"Throughput at saturation ignores SLOs.\" This implies that if a system is designed to handle a certain load, a simple \"throughput\" metric might suggest it can",
+      "contexts": [
+        {
+          "id": "goodput",
+          "score": 1.0
+        },
+        {
+          "id": "paged",
+          "score": 0.0
+        },
+        {
+          "id": "radix",
+          "score": 0.0
+        }
+      ],
+      "embed_backend": "keyword overlap",
+      "timings_ms": {
+        "embed": 0.0,
+        "retrieve": 0.1,
+        "llm": 3892.9,
+        "total": 3893.0
+      },
+      "server_timings": {
+        "prompt_n": 151,
+        "prompt_ms": 242.678,
+        "predicted_n": 200,
+        "predicted_ms": 1206.698
+      }
+    },
+    {
+      "query": "What problem does PagedAttention actually solve?",
+      "answer": "PagedAttention solves the problem of **internal fragmentation** in GPU memory.\n\nWhile the context mentions that it stores KV cache in non-contiguous pages to remove fragmentation, the specific problem it addresses is that the internal fragmentation of contiguous memory (like the main GPU memory) is often too large for the total number of tokens or the specific workload, leading to wasted memory. By using non-contiguous pages, PagedAttention ensures that the total memory used remains close to the actual memory bandwidth available, preventing excessive waste.",
+      "contexts": [
+        {
+          "id": "paged",
+          "score": 1.0
+        },
+        {
+          "id": "radix",
+          "score": 0.0
+        },
+        {
+          "id": "disagg",
+          "score": 0.0
+        }
+      ],
+      "embed_backend": "keyword overlap",
+      "timings_ms": {
+        "embed": 0.0,
+        "retrieve": 0.0,
+        "llm": 2761.4,
+        "total": 2761.5
+      },
+      "server_timings": {
+        "prompt_n": 114,
+        "prompt_ms": 65.599,
+        "predicted_n": 104,
+        "predicted_ms": 604.843
+      }
+    },
+    {
+      "query": "When does splitting prefill and decode help?",
+      "answer": "Splitting prefill and decode helps when the **compute-bound part of the pipeline is the bottleneck**, specifically when the prefilling phase requires significant processing power that would otherwise be wasted if the entire operation were executed in a single pass.\n\nIn this context, the context states that prefill is compute-bound. When a model is split into multiple separate pools (e.g., for different token prefixes or different batches), the prefilling step can be executed independently for each pool. This allows the engine to skip the redundant prefilling step entirely for the second pool, thereby optimizing the compute cost.\n\nThis optimization is particularly beneficial when:\n1.  **Different token prefixes require different prefilling strategies**: If the first token needs a full prefill and the second token only needs a prefix, splitting allows the engine to handle them sequentially without re-running the expensive full prefill for the second token.\n2.  **Efficient resource utilization**: By separating the compute-heavy prefill from",
+      "contexts": [
+        {
+          "id": "disagg",
+          "score": 2.0
+        },
+        {
+          "id": "radix",
+          "score": 1.0
+        },
+        {
+          "id": "batching",
+          "score": 1.0
+        }
+      ],
+      "embed_backend": "keyword overlap",
+      "timings_ms": {
+        "embed": 0.0,
+        "retrieve": 0.0,
+        "llm": 3536.1,
+        "total": 3536.1
+      },
+      "server_timings": {
+        "prompt_n": 113,
+        "prompt_ms": 110.469,
+        "predicted_n": 200,
+        "predicted_ms": 1353.116
+      }
+    }
+  ]
+}

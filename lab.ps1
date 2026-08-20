@@ -28,7 +28,7 @@ $SysPy  = 'python'
 
 function Need-Venv {
     if (-not (Test-Path $VenvPy)) {
-        Write-Host "ERROR: no virtualenv found at .venv\" -ForegroundColor Red
+        Write-Host "ERROR: no virtualenv found at .venv folder" -ForegroundColor Red
         Write-Host "Run this first:  .\lab.ps1 setup"
         exit 1
     }
@@ -142,7 +142,7 @@ switch ($Target) {
             benchmarks\02-*.md, benchmarks\02-*.json, benchmarks\02-*.csv,
             benchmarks\03-*.md, benchmarks\03-*.json,
             benchmarks\locust-*.csv, benchmarks\bonus-*.md, benchmarks\bonus-*.json
-        Write-Host "Cleaned generated reports. Kept hardware.json, models\, runtime\, submission\."
+        Write-Host "Cleaned generated reports. Kept hardware.json, models, runtime, submission."
     }
 
     'clean-all' {

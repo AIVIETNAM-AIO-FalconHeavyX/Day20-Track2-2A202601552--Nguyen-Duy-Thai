@@ -1,180 +1,108 @@
-# Reflection — Day 20 Lab (Personal Report)
+# Reflection - Day 20 Lab
 
-> **Đây là báo cáo cá nhân.** Số liệu của bạn **không** so sánh được với bạn cùng lớp
-> — chỉ so **before vs after trên chính máy bạn**. Rubric chấm độ rõ ràng của setup,
-> đo lường và **lập luận**, không chấm tốc độ tuyệt đối.
->
-> `make verify` sẽ fail nếu còn placeholder chưa điền. Đó là cố ý.
+**Họ tên:** Nguyễn Duy Thái  
+**Cohort:** AICB Track 2  
+**Ngày submit:** 2026-08-20
 
-**Họ Tên:** _<Họ Tên>_
-**Cohort:** _<A20-K1 / A20-K2 / ...>_
-**Ngày submit:** _<YYYY-MM-DD>_
+## 1. Hardware & runtime
 
----
+- **OS:** Windows 10
+- **CPU:** Intel Core i7-11800H @ 2.30GHz
+- **Cores:** 8 physical / 16 logical
+- **CPU extensions:** thông tin probe không dùng để bật đường chạy chính
+- **RAM:** 15.8 GB
+- **Accelerator:** NVIDIA GeForce RTX 3060 Laptop GPU 6 GB, CUDA và Vulkan
+- **llama.cpp asset:** `llama-b10488-bin-win-cuda-12.4-x64.zip`
+- **Model:** Qwen3.5 0.8B (`LAB_MODEL=qwen35-0.8b`)
+- **Quantization:** `Q4_K_M` + `UD-Q2_K_XL`
 
-## 1. Hardware & runtime  *(rubric 1, 2 — 10 điểm)*
+Tôi chạy local trên laptop. Tôi chủ động chọn Qwen thay vì Gemma để giảm thời gian tải và có
+thêm mẫu trong load test; lựa chọn này vẫn đáp ứng đầy đủ rubric. Setup tải runtime CUDA và hai
+GGUF thành công, không cần compiler hay Docker.
 
-> Từ `make probe`. Paste output hoặc điền tay.
-
-- **OS:** _<macOS 14 / Windows 11 / Ubuntu 24.04 / ...>_
-- **CPU:** _<Apple M2 / Intel i7-12700H / AMD Ryzen 7 5800H>_
-- **Cores:** _<physical / logical>_
-- **CPU extensions:** _<AVX2 / AVX-512 / NEON / —>_
-- **RAM:** _<GB>_
-- **Accelerator:** _<NVIDIA RTX 4060 / Apple Metal / Vulkan / CPU only>_
-- **llama.cpp asset đã tải:** _<vd: llama-b10488-bin-macos-arm64.tar.gz>_
-- **Model đã dùng:** _<Gemma 4 E2B / Qwen3.5 0.8B>_ (`LAB_MODEL=`_<gemma4-e2b / qwen35-0.8b>_)
-- **Quantization:** _<primary>_ + _<compare>_ (từ `models/active.json`)
-
-**Chạy ở đâu:** _<laptop của tôi / Colab / Kaggle>_
-_(Nếu dùng cloud fallback: nói rõ vì sao — RAM < 8 GB, setup fail, v.v. Không mất điểm.)_
-
-**Setup story** (≤ 80 chữ): điều gì cần thay đổi để lab chạy trên máy bạn? Có bước
-nào fail rồi phải workaround không?
-
-_Answer here._
-
----
-
-## 2. Đo lường  *(rubric 3, 4, 5 — 20 điểm)*
-
-> Paste bảng từ `benchmarks/01-quickstart-results.md` (`make bench` tự sinh).
+## 2. Đo lường
 
 | Quantization | Size (GB) | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode (tok/s) |
 |---|--:|--:|--:|--:|--:|--:|
-| UD-Q4_K_XL | | | | | | |
-| UD-Q2_K_XL | | | | | | |
+| Q4_K_M | 0.50 | 2749 | 69 / 76 | 6.2 / 6.6 | 461 / 478 / 478 | 160.4 |
+| UD-Q2_K_XL | 0.39 | 2562 | 70 / 81 | 6.5 / 6.7 | 477 / 502 / 502 | 153.7 |
 
-**Quan sát** (≤ 60 chữ): 2-bit nhanh hơn bao nhiêu, và **có đáng không**? Bạn đã thử
-hỏi cùng một câu trên cả hai (`make serve` vs `.venv/bin/python labs/02-serve/serve.py --compare`)
-chưa? Chất lượng khác nhau thế nào?
+Bản 2-bit nhỏ hơn 0.11 GB nhưng decode chậm hơn khoảng 4%, còn TTFT gần như không đổi.
+Trên GPU này, chi phí giải lượng tử 2-bit lớn hơn lợi ích giảm số byte phải đọc. Khi hỏi cùng
+một câu, Q4_K_M cho câu trả lời ổn định và mạch lạc hơn, nên tôi chọn Q4_K_M cho serving.
 
-_Answer here._
-
----
-
-## 3. Serving under load  *(rubric 8, 9, 10 — 20 điểm)*
-
-> Từ `benchmarks/02-server-results.md` (`make load-report`).
+## 3. Serving under load
 
 | Users | RPS | P50 (ms) | P95 (ms) | P99 (ms) | Eff. concurrency | Failures |
 |--:|--:|--:|--:|--:|--:|--:|
-| 10 | | | | | | |
-| 50 | | | | | | |
+| 10 | 3.11 | 2100 | 3900 | 5400 | 7.1 | 0.0% |
+| 50 | 2.64 | 17000 | 20000 | 21000 | 41.1 | 0.0% |
 
-- **Offered load tăng 5×, throughput thực tăng:** _<X.XX>×_
-- **P95 tăng:** _<X.XX>×_
-- **Effective concurrency ở 50 users:** _<số>_ so với `--parallel` = _<số>_ slots
+- **Offered load tăng 5x, throughput thực tế:** 0.85x
+- **P95 tăng:** 5.13x
+- **Effective concurrency ở 50 users:** 41.1 so với `--parallel=4` slots
+- **Peak `n_busy_slots_per_decode`:** 3.96 / 4 slots
 
-**Peak `llamacpp:n_busy_slots_per_decode`** (từ `make metrics` khi `make load-50` đang
-chạy): _<số>_ / _<slots>_ slots
+Server bão hòa ở tải 50 users. Throughput không tăng theo tải, P95 tăng mạnh và có 44--46
+request deferred. Gauge 3.96/4 xác nhận continuous batching đang dùng gần đủ slot; effective
+concurrency 41.1 bao gồm cả request nằm trong queue, nên lớn hơn số slot là hợp lý. Nếu cần
+nâng goodput trong một SLO P95, tôi sẽ giảm output token hoặc dùng quantization nhanh hơn trước;
+tăng số slot có thể làm queue dài hơn và không giải quyết nút thắt GPU.
 
-**Saturation reading** (≤ 80 chữ): server của bạn bão hoà ở đâu, và **bằng chứng nào**
-thuyết phục bạn? Nếu P95 tăng nhanh hơn RPS thì phần latency thêm đó là queue time hay
-compute time — bạn biết bằng cách nào? Nếu bạn phải nâng goodput@SLO, bạn sẽ đổi knob
-nào **trước**, và vì sao knob đó?
-
-_Answer here._
-
----
-
-## 4. Integration  *(rubric 12, 13 — 15 điểm)*
-
-> Từ `make pipeline`. Nói thật cái nào real, cái nào stub — stub **không** mất điểm.
+## 4. Integration
 
 | Day | Piece | Real hay stub? |
 |---|---|---|
-| N16 Cloud/IaC | | |
-| N17 Data pipeline | | |
-| N18 Lakehouse | | |
-| N19 Vector + features | | |
-| N20 Serving | `llama-server` | real |
+| N16 | Cloud/IaC | Stub, chạy localhost |
+| N17 | Data pipeline | Stub, dữ liệu trong bộ nhớ |
+| N18 | Lakehouse | Stub, chưa nối kho dữ liệu thật |
+| N19 | Vector + features | Stub, `TOY_DOCS` và keyword overlap |
+| N20 | Serving | Real, `llama-server` |
 
-**Latency split** (mean của 3 query, từ output của `pipeline.py`):
+Latency trung bình của ba query:
 
-- embed: _<ms>_
-- retrieve: _<ms>_
-- llm: _<ms>_
-- **stage chiếm nhiều nhất:** _<stage>_ (_<%>_ của total)
+- embed: **0.0 ms**
+- retrieve: **0.0 ms** (khoảng 0.1 ms ở query đầu)
+- llm: **3396.8 ms**
+- tổng: **3396.9 ms**
+- stage chiếm nhiều nhất: **LLM, gần 100%**
 
-**Reflection** (≤ 60 chữ): bottleneck ở đâu? Có khớp với kỳ vọng của bạn không? Nếu
-phải giảm latency của pipeline này 2×, bạn sẽ tấn công vào đâu?
+Kết quả phù hợp với dự đoán: pipeline toy gần như không tốn thời gian retrieve, còn model phải
+decode tới 200 token. Nếu cần giảm một nửa latency, tôi sẽ giảm ngân sách output và tối ưu
+decode/queue; thay embedding hoặc keyword search hiện chưa tạo khác biệt đáng kể.
 
-_Answer here._
+## 5. Thay đổi quan trọng nhất
 
----
+**Thay đổi:** giảm số thread từ baseline 8 xuống 4 theo kết quả tuning.
 
-## 5. The single change that mattered most  *(rubric 11 — 10 điểm)*
-
-> **Phần quan trọng nhất của report.** Không cần bonus track: `make tune` đã cho bạn
-> một before/after thật (`benchmarks/01-tuning-tg128.md`). Đổi quantization,
-> `LAB_N_CTX`, hay `--parallel` rồi đo lại cũng được.
-
-**Change:** _<vd: hạ -t từ 16 xuống 8; vd: đổi sang UD-Q2_K_XL; vd: --parallel 4 → 8>_
-
-```
-before:  <số + đơn vị>
-after:   <số + đơn vị>
-speedup: <X.Y>×
+```text
+before: 159.2 tok/s (8 threads, physical-core default)
+after:  162.9 tok/s (4 threads)
+speedup: 1.02x
 ```
 
-**Tại sao nó work** (1–2 đoạn — đây là phần grader đọc kỹ nhất):
+Đây là cải thiện nhỏ nhưng đo được. Sweep cho thấy 1 thread đạt 162.3 tok/s, 4 thread đạt
+162.9 tok/s, sau đó throughput giảm nhẹ ở 8 và 16 thread. Vì `ngl=99`, phần lớn công việc
+đã chạy trên GPU; thêm CPU thread không tăng lượng công việc GPU mà thêm chi phí lập lịch,
+đồng bộ và tranh chấp tài nguyên. Kết quả này cũng giải thích vì sao 32 thread không thắng.
+Tôi không cố diễn giải đây là speedup lớn: trên workload và GPU này, thread count chỉ là knob
+phụ, còn quantization và queue mới ảnh hưởng rõ hơn đến trải nghiệm serving.
 
-_Giải thích như đang nói với bạn ngồi cạnh. Bám vào **cơ chế**, không phải "vibes":
-memory bandwidth? vector width? cache residency? scheduling? queueing? Nếu kết quả
-**khác** với kỳ vọng từ deck — nói rõ, và giải thích vì sao. Grader thưởng điểm cho
-lập luận đúng về một kết quả bất ngờ, hơn là một con số đẹp không được giải thích._
+## 6. Bonus
 
-_Answer here._
+Chưa thực hiện bonus. Tôi ưu tiên hoàn tất đầy đủ base track với số liệu có thể kiểm chứng.
 
----
+## 7. Điều làm tôi ngạc nhiên
 
-## 6. Bonus  *(optional — tối đa 20 điểm)*
+Bản 2-bit nhỏ hơn nhưng chậm hơn trên GPU. Điều này nhắc tôi rằng quantization không tự động
+đồng nghĩa với nhanh hơn: lợi ích phụ thuộc bottleneck thực tế và chi phí dequantization.
 
-> Bỏ trống nếu không làm. Xem `bonus/README.md`. Đừng làm hết — **một** finding sâu
-> ăn điểm hơn năm bảng nông.
+## 8. Self-check
 
-**Đã làm:** _<B1 build-compare / B2 sweep nào / B4 challenge nào / B5 lựa chọn nào>_
-
-**Numbers:**
-
-```
-before:  <số>
-after:   <số>
-speedup: <X.Y>×
-```
-
-**Điều này nói lên gì mà deck chưa nói:**
-
-_(để trống nếu bạn không làm phần này)_
-
----
-
-## 7. Điều làm bạn ngạc nhiên nhất  *(optional)*
-
-_(1–2 câu. Không bắt buộc, nhưng grader đọc hết.)_
-
-_(để trống nếu bạn không làm phần này)_
-
----
-
-## 8. Self-check trước khi push
-
-- [ ] `hardware.json` committed
-- [ ] `models/active.json` committed
-- [ ] `benchmarks/01-quickstart-results.md` committed (`make bench`)
-- [ ] `benchmarks/01-tuning-tg128.md` committed (`make tune`)
-- [ ] `benchmarks/02-server-results.md` committed (`make load-report`)
-- [ ] `benchmarks/02-server-batching-u50.md` hoặc `-metrics-u50.csv` committed (`make metrics`)
-- [ ] `benchmarks/locust-10_stats.csv` + `locust-50_stats.csv` committed (`make load-10` / `load-50`)
-- [ ] `benchmarks/03-integration-results.md` committed (`make pipeline`)
-- [ ] Mọi section **"required — replace this line"** trong các file `benchmarks/*.md`
-      đã được thay bằng nhận xét của bạn
-- [ ] 5 screenshots trong `submission/screenshots/`
-- [ ] `make verify` → **exit 0**
-- [ ] Repo GitHub ở chế độ **public**
-- [ ] Đã paste public URL vào VinUni LMS
-- [ ] **Không** commit `models/*.gguf` hay `runtime/` (đã có trong `.gitignore`)
-
-**Quan trọng:** repo phải **public** đến khi điểm được công bố. Private → grader không
-xem được → 0 điểm.
+- [x] `hardware.json` và `models/active.json` đã tạo
+- [x] Benchmark hai quantization, tuning, serving và smoke test đã chạy
+- [x] Load test 10/50 users và metrics đồng thời với 50 users đã chạy
+- [x] RAG pipeline đủ 3 query đã chạy
+- [x] Các report đã thay phần yêu cầu nhận xét
+- [ ] Screenshots terminal cần được chụp và commit trước khi submit
+- [ ] Chạy `verify` lần cuối sau khi thêm screenshots
